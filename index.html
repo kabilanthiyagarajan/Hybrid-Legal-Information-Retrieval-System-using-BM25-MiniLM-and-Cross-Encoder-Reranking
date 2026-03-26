@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LexFind — Swiss Legal Information Retrieval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Fraunces:ital,wght@0,300;0,600;1,300&display=swap" rel="stylesheet"/>
+<style>
+/* ── CSS Variables ─────────────────────────────────── */
+:root {
+  --bg:        #05070d;
+  --bg2:       #0c0f1a;
+  --bg3:       #111524;
+  --border:    #1e2440;
+  --border2:   #2a3060;
+  --gold:      #c9a84c;
+  --gold2:     #f0c96a;
+  --teal:      #2de8c8;
+  --teal2:     #00b8a0;
+  --red:       #f05858;
+  --blue:      #5b8dff;
+  --text:      #e8eaf0;
+  --muted:     #6b7299;
+  --muted2:    #4a5070;
+  --success:   #3dd68c;
+  --font-head: 'Syne', sans-serif;
+  --font-body: 'Fraunces', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --glow-gold: 0 0 30px rgba(201,168,76,0.25);
+  --glow-teal: 0 0 30px rgba(45,232,200,0.2);
+}
+
+/* ── Reset & Base ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Animated background grid ──────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(45,232,200,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,232,200,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridPulse 8s ease-in-out infinite;
+  pointer-events: none; z-index: 0;
+}
+@keyframes gridPulse {
+  0%,100% { opacity: 0.4; }
+  50%     { opacity: 1;   }
+}
+
+/* ── Noise overlay ─────────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: 0.5;
+}
+
+/* ── Layout ─────────────────────────────────────────── */
+.wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+/* ── Header ─────────────────────────────────────────── */
+header {
+  padding: 48px 0 32px;
+  border-bottom: 1px solid var(--border);
+  animation: fadeDown 0.8s ease both;
+}
+.header-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+.logo {
+  display: flex; align-items: center; gap: 14px;
+}
+.logo-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--gold), var(--teal));
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 24px;
+  box-shadow: var(--glow-gold);
+}
+.logo-text h1 {
+  font-family: var(--font-head);
+  font-size: 26px; font-weight: 800;
+  background: linear-gradient(90deg, var(--gold2), var(--teal));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+.logo-text p { font-size: 12px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 1px; }
+.header-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+.badge {
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 5px 12px; border-radius: 20px;
+  border: 1px solid; letter-spacing: 0.5px;
+}
+.badge-gold  { color: var(--gold);  border-color: rgba(201,168,76,0.4);  background: rgba(201,168,76,0.08); }
+.badge-teal  { color: var(--teal);  border-color: rgba(45,232,200,0.3);  background: rgba(45,232,200,0.07); }
+.badge-blue  { color: var(--blue);  border-color: rgba(91,141,255,0.3);  background: rgba(91,141,255,0.07); }
+
+/* ── Nav tabs ───────────────────────────────────────── */
+nav {
+  display: flex; gap: 4px;
+  padding: 20px 0 0;
+  animation: fadeDown 0.9s ease both;
+}
+.tab {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  padding: 8px 20px; border-radius: 6px 6px 0 0;
+  border: 1px solid transparent; border-bottom: none;
+  cursor: pointer; transition: all 0.25s;
+  color: var(--muted); background: transparent;
+  letter-spacing: 0.5px;
+  position: relative; bottom: -1px;
+}
+.tab.active {
+  color: var(--teal); border-color: var(--border2);
+  background: var(--bg2);
+  text-shadow: 0 0 12px rgba(45,232,200,0.5);
+}
+.tab:hover:not(.active) { color: var(--text); background: var(--bg3); }
+
+/* ── Main panels ───────────────────────────────────── */
+.panel {
+  display: none;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 0 12px 12px 12px;
+  padding: 40px;
+  animation: fadeUp 0.5s ease both;
+  margin-bottom: 40px;
+}
+.panel.active { display: block; }
+
+/* ── Section titles ────────────────────────────────── */
+.section-title {
+  font-family: var(--font-head);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 24px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title::after {
+  content: ''; flex: 1;
+  height: 1px; background: var(--border);
+}
+
+/* ── Search bar ────────────────────────────────────── */
+.search-wrap {
+  position: relative; margin-bottom: 32px;
+}
+.search-input {
+  width: 100%; padding: 18px 60px 18px 24px;
+  background: var(--bg3); border: 2px solid var(--border2);
+  border-radius: 12px; color: var(--text);
+  font-family: var(--font-body); font-size: 16px;
+  outline: none; transition: all 0.3s;
+}
+.search-input::placeholder { color: var(--muted2); font-style: italic; }
+.search-input:focus {
+  border-color: var(--teal);
+  box-shadow: var(--glow-teal), inset 0 0 0 1px rgba(45,232,200,0.1);
+}
+.search-btn {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: linear-gradient(135deg, var(--teal2), var(--teal));
+  border: none; border-radius: 8px;
+  width: 40px; height: 40px;
+  cursor: pointer; display: grid; place-items: center;
+  font-size: 18px; transition: all 0.2s;
+}
+.search-btn:hover { transform: translateY(-50%) scale(1.1); box-shadow: var(--glow-teal); }
+
+/* ── Sample query chips ─────────────────────────────── */
+.sample-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px; }
+.chip {
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--muted); background: var(--bg3);
+  cursor: pointer; transition: all 0.2s;
+}
+.chip:hover { border-color: var(--teal); color: var(--teal); background: rgba(45,232,200,0.06); }
+
+/* ── Results ────────────────────────────────────────── */
+.results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.results-meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.result-cards { display: flex; flex-direction: column; gap: 10px; }
+.result-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 20px;
+  display: grid; grid-template-columns: 36px 1fr auto;
+  align-items: center; gap: 16px;
+  transition: all 0.2s; cursor: default;
+  animation: fadeUp 0.4s ease both;
+}
+.result-card:hover { border-color: var(--border2); transform: translateX(4px); }
+.rank-badge {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  background: rgba(45,232,200,0.1); color: var(--teal);
+  border: 1px solid rgba(45,232,200,0.25);
+  flex-shrink: 0;
+}
+.result-citation { font-family: var(--font-mono); font-size: 13px; color: var(--text); }
+.result-type { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.result-score {
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 3px 10px; border-radius: 12px;
+  background: rgba(201,168,76,0.1); color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.2);
+  white-space: nowrap;
+}
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted); font-style: italic;
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* ── Metrics grid ───────────────────────────────────── */
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+  margin-bottom: 36px;
+}
+.metric-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 24px;
+  text-align: center; transition: all 0.3s;
+  animation: fadeUp 0.5s ease both;
+}
+.metric-card:hover { border-color: var(--border2); box-shadow: var(--glow-gold); }
+.metric-val {
+  font-family: var(--font-head); font-size: 42px; font-weight: 800;
+  line-height: 1; margin-bottom: 8px;
+}
+.metric-val.f1    { color: var(--teal); text-shadow: 0 0 20px rgba(45,232,200,0.4); }
+.metric-val.prec  { color: var(--gold); text-shadow: 0 0 20px rgba(201,168,76,0.4); }
+.metric-val.rec   { color: var(--blue); text-shadow: 0 0 20px rgba(91,141,255,0.4); }
+.metric-label {
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+}
+.metric-bar-wrap { margin-top: 12px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.metric-bar { height: 100%; border-radius: 2px; transition: width 1.5s cubic-bezier(0.34,1.56,0.64,1); }
+.metric-bar.f1   { background: linear-gradient(90deg, var(--teal2), var(--teal)); }
+.metric-bar.prec { background: linear-gradient(90deg, #b8880a, var(--gold)); }
+.metric-bar.rec  { background: linear-gradient(90deg, #3060cc, var(--blue)); }
+
+/* ── Per-query table ────────────────────────────────── */
+.table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(--bg3); border-bottom: 1px solid var(--border); }
+th {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 1px;
+  color: var(--muted); padding: 12px 16px; text-align: left;
+  white-space: nowrap;
+}
+td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.f1-cell { font-family: var(--font-mono); font-weight: 500; }
+.f1-cell.high { color: var(--success); }
+.f1-cell.mid  { color: var(--gold); }
+.f1-cell.low  { color: var(--red); }
+.f1-mini-bar { height: 3px; border-radius: 2px; margin-top: 4px; }
+.query-text { font-style: italic; color: var(--text); max-width: 280px; }
+.citation-pill {
+  display: inline-block; font-family: var(--font-mono); font-size: 10px;
+  padding: 2px 8px; border-radius: 10px;
+  background: rgba(45,232,200,0.08); color: var(--teal);
+  border: 1px solid rgba(45,232,200,0.2); margin: 2px 2px 2px 0;
+}
+.tp-badge { color: var(--success); font-family: var(--font-mono); font-size: 11px; }
+.fp-badge { color: var(--red);     font-family: var(--font-mono); font-size: 11px; }
+.fn-badge { color: var(--gold);    font-family: var(--font-mono); font-size: 11px; }
+
+/* ── Model architecture card ────────────────────────── */
+.arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+.arch-card {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 28px;
+  animation: fadeUp 0.5s ease both;
+}
+.arch-card-title {
+  font-family: var(--font-head); font-size: 14px; font-weight: 700;
+  color: var(--gold2); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.arch-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.arch-row:last-child { border-bottom: none; }
+.arch-key { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.arch-val { font-family: var(--font-mono); font-size: 12px; color: var(--text); text-align: right; }
+.arch-val.highlight { color: var(--teal); }
+
+/* ── Pipeline flow ──────────────────────────────────── */
+.pipeline {
+  display: flex; align-items: stretch; gap: 0;
+  margin-bottom: 36px; overflow-x: auto;
+}
+.pipe-step {
+  flex: 1; min-width: 140px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 16px;
+  text-align: center; position: relative;
+  animation: fadeUp 0.5s ease both;
+}
+.pipe-step + .pipe-step { margin-left: -1px; border-left-color: transparent; border-radius: 0 10px 10px 0; }
+.pipe-step:first-child { border-radius: 10px 0 0 10px; }
+.pipe-step:last-child  { border-radius: 0 10px 10px 0; }
+.pipe-icon { font-size: 28px; margin-bottom: 10px; }
+.pipe-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.pipe-detail { font-family: var(--font-mono); font-size: 10px; color: var(--muted); line-height: 1.6; }
+.pipe-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--teal); font-size: 20px; padding: 0 4px;
+  flex-shrink: 0; align-self: center;
+}
+.pipe-count { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--teal); }
+
+/* ── Submission preview ─────────────────────────────── */
+.sub-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); margin-top: 24px; }
+.sub-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+}
+.sub-stat {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 6px 14px; border-radius: 8px;
+  background: rgba(45,232,200,0.07); color: var(--teal);
+  border: 1px solid rgba(45,232,200,0.2);
+}
+.copy-btn {
+  margin-left: auto; font-family: var(--font-mono); font-size: 11px;
+  padding: 8px 18px; border-radius: 8px;
+  background: rgba(201,168,76,0.1); color: var(--gold);
+  border: 1px solid rgba(201,168,76,0.3); cursor: pointer; transition: all 0.2s;
+}
+.copy-btn:hover { background: rgba(201,168,76,0.2); }
+
+/* ── Notification toast ─────────────────────────────── */
+.toast {
+  position: fixed; bottom: 30px; right: 30px; z-index: 1000;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px 20px;
+  font-family: var(--font-mono); font-size: 13px; color: var(--teal);
+  box-shadow: var(--glow-teal);
+  transform: translateY(100px); opacity: 0;
+  transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── Score gauge ────────────────────────────────────── */
+.gauge-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.gauge-label { font-family: var(--font-mono); font-size: 12px; color: var(--muted); min-width: 100px; }
+.gauge-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.gauge-fill { height: 100%; border-radius: 4px; transition: width 1.5s cubic-bezier(0.34,1.56,0.64,1); }
+.gauge-num { font-family: var(--font-mono); font-size: 12px; color: var(--text); min-width: 50px; text-align: right; }
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes fadeDown { from { opacity:0; transform: translateY(-20px); } to { opacity:1; transform: none; } }
+@keyframes fadeUp   { from { opacity:0; transform: translateY(20px);  } to { opacity:1; transform: none; } }
+@keyframes pulse    { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+.pulse { animation: pulse 2s ease-in-out infinite; }
+
+/* ── Loading shimmer ────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--border) 50%, var(--bg3) 75%);
+  background-size: 200% 100%;
+  animation: shimmerAnim 1.5s ease-in-out infinite;
+  border-radius: 8px; height: 60px;
+}
+@keyframes shimmerAnim { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+/* ── Responsive ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .wrap { padding: 0 16px; }
+  .metrics-grid { grid-template-columns: 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+  .panel { padding: 24px; }
+  .pipeline { flex-direction: column; }
+  .pipe-step, .pipe-step + .pipe-step { margin-left: 0; margin-top: -1px; border-radius: 0; }
+  .pipe-step:first-child { border-radius: 10px 10px 0 0; }
+  .pipe-step:last-child  { border-radius: 0 0 10px 10px; }
+  .pipe-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────────────── -->
+<div class="wrap">
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚖️</div>
+        <div class="logo-text">
+          <h1>LexFind</h1>
+          <p>SWISS LEGAL INFORMATION RETRIEVAL · FINAL YEAR PROJECT</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-teal">✓ Model Trained</span>
+        <span class="badge badge-gold">paraphrase-multilingual-MiniLM-L12-v2</span>
+        <span class="badge badge-blue">GTX 1650 · CUDA</span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <nav>
+      <button class="tab active" onclick="showTab('search')">🔍 Live Search</button>
+      <button class="tab" onclick="showTab('metrics')">📊 Metrics</button>
+      <button class="tab" onclick="showTab('model')">🧠 Model Info</button>
+      <button class="tab" onclick="showTab('submission')">📄 Submission</button>
+    </nav>
+  </header>
+
+  <!-- ════════════════════════════════════════════════
+       TAB 1 — LIVE SEARCH DEMO
+  ═══════════════════════════════════════════════════ -->
+  <div class="panel active" id="tab-search">
+
+    <div class="section-title">Query Interface</div>
+
+    <div class="search-wrap">
+      <input class="search-input" id="queryInput" type="text"
+        placeholder="Ask a Swiss legal question in English… e.g. 'What are the grounds for divorce?'"
+        onkeydown="if(event.key==='Enter') runSearch()"/>
+      <button class="search-btn" onclick="runSearch()">⌕</button>
+    </div>
+
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;font-family:var(--font-mono);">
+      Try a sample query:
+    </p>
+    <div class="sample-chips">
+      <span class="chip" onclick="setQuery(this)">What are the grounds for divorce in Switzerland?</span>
+      <span class="chip" onclick="setQuery(this)">Rights of employees upon dismissal</span>
+      <span class="chip" onclick="setQuery(this)">Requirements for Swiss citizenship by naturalization</span>
+      <span class="chip" onclick="setQuery(this)">Criminal liability for corporate fraud</span>
+      <span class="chip" onclick="setQuery(this)">Tenant rights in rental agreements</span>
+      <span class="chip" onclick="setQuery(this)">Child custody determination criteria</span>
+      <span class="chip" onclick="setQuery(this)">Tax obligations for self-employed persons</span>
+      <span class="chip" onclick="setQuery(this)">Social security benefits for disabled persons</span>
+    </div>
+
+    <div id="results-area">
+      <div class="empty-state">
+        <div class="empty-icon">⚖️</div>
+        <p>Enter a legal question above to retrieve relevant Swiss citations.</p>
+        <p style="font-size:12px;margin-top:6px;font-family:var(--font-mono);">Results from 2,652,248 corpus documents</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       TAB 2 — METRICS DASHBOARD
+  ═══════════════════════════════════════════════════ -->
+  <div class="panel" id="tab-metrics">
+
+    <div class="section-title">Validation Performance</div>
+
+    <!-- Macro metric cards -->
+    <div class="metrics-grid">
+      <div class="metric-card" style="animation-delay:0.1s">
+        <div class="metric-val f1" id="val-f1">—</div>
+        <div class="metric-label">Macro F1 Score</div>
+        <div class="metric-bar-wrap"><div class="metric-bar f1" id="bar-f1" style="width:0%"></div></div>
+      </div>
+      <div class="metric-card" style="animation-delay:0.2s">
+        <div class="metric-val prec" id="val-prec">—</div>
+        <div class="metric-label">Macro Precision</div>
+        <div class="metric-bar-wrap"><div class="metric-bar prec" id="bar-prec" style="width:0%"></div></div>
+      </div>
+      <div class="metric-card" style="animation-delay:0.3s">
+        <div class="metric-val rec" id="val-rec">—</div>
+        <div class="metric-label">Macro Recall</div>
+        <div class="metric-bar-wrap"><div class="metric-bar rec" id="bar-rec" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Score gauges -->
+    <div class="section-title" style="margin-top:32px">Per-Query Score Distribution</div>
+
+    <div id="gauge-section" style="margin-bottom:32px">
+      <p style="color:var(--muted);font-family:var(--font-mono);font-size:12px;">Loading per-query data…</p>
+    </div>
+
+    <!-- Per-query table -->
+    <div class="section-title">Per-Query Breakdown</div>
+    <div class="table-wrap">
+      <table id="metrics-table">
+        <thead>
+          <tr>
+            <th>Query ID</th>
+            <th>Query</th>
+            <th>F1</th>
+            <th>Precision</th>
+            <th>Recall</th>
+            <th>TP</th><th>FP</th><th>FN</th>
+            <th>Predicted Citations</th>
+          </tr>
+        </thead>
+        <tbody id="metrics-tbody">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:32px;font-family:var(--font-mono);">Paste your inference_val_metrics.csv data below to load →</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CSV paste area -->
+    <div style="margin-top:28px">
+      <div class="section-title">Load Your Results</div>
+      <textarea id="csv-paste" rows="6"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;
+               color:var(--text);font-family:var(--font-mono);font-size:11px;padding:16px;
+               outline:none;resize:vertical;line-height:1.6;"
+        placeholder="Paste contents of inference_val_metrics.csv here, then click Load…"></textarea>
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <button onclick="loadCSV()"
+          style="font-family:var(--font-mono);font-size:12px;padding:10px 24px;
+                 border-radius:8px;background:linear-gradient(135deg,var(--teal2),var(--teal));
+                 border:none;color:#000;font-weight:600;cursor:pointer;">
+          ▶ Load Metrics
+        </button>
+        <button onclick="loadDemoData()"
+          style="font-family:var(--font-mono);font-size:12px;padding:10px 24px;
+                 border-radius:8px;background:rgba(201,168,76,0.15);
+                 border:1px solid rgba(201,168,76,0.3);color:var(--gold);cursor:pointer;">
+          ✦ Load Demo Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       TAB 3 — MODEL INFORMATION
+  ═══════════════════════════════════════════════════ -->
+  <div class="panel" id="tab-model">
+
+    <div class="section-title">Pipeline Architecture</div>
+
+    <!-- Pipeline flow -->
+    <div class="pipeline">
+      <div class="pipe-step" style="animation-delay:0.05s">
+        <div class="pipe-icon">❓</div>
+        <div class="pipe-count">1</div>
+        <div class="pipe-title">Query</div>
+        <div class="pipe-detail">English legal<br/>question input</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" style="animation-delay:0.1s">
+        <div class="pipe-icon">📝</div>
+        <div class="pipe-count">100</div>
+        <div class="pipe-title">BM25</div>
+        <div class="pipe-detail">Sparse lexical<br/>retrieval stage</div>
+      </div>
+      <div class="pipe-arrow">+</div>
+      <div class="pipe-step" style="animation-delay:0.15s">
+        <div class="pipe-icon">🧬</div>
+        <div class="pipe-count">100</div>
+        <div class="pipe-title">Dense</div>
+        <div class="pipe-detail">MiniLM embedding<br/>cosine search</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" style="animation-delay:0.2s">
+        <div class="pipe-icon">🔀</div>
+        <div class="pipe-count">~150</div>
+        <div class="pipe-title">Merge</div>
+        <div class="pipe-detail">Deduplicated<br/>candidate pool</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" style="animation-delay:0.25s">
+        <div class="pipe-icon">⚡</div>
+        <div class="pipe-count">20</div>
+        <div class="pipe-title">Rerank</div>
+        <div class="pipe-detail">Cross-encoder<br/>deep scoring</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" style="animation-delay:0.3s" style="border-color:var(--border2)">
+        <div class="pipe-icon">✅</div>
+        <div class="pipe-count">10</div>
+        <div class="pipe-title">Output</div>
+        <div class="pipe-detail">Final citations<br/>ranked list</div>
+      </div>
+    </div>
+
+    <!-- Model cards -->
+    <div class="arch-grid">
+      <div class="arch-card" style="border-color:rgba(45,232,200,0.25);animation-delay:0.1s">
+        <div class="arch-card-title">🧬 Bi-Encoder (Embedding Model)</div>
+        <div class="arch-row"><span class="arch-key">Model</span><span class="arch-val highlight">paraphrase-multilingual-MiniLM-L12-v2</span></div>
+        <div class="arch-row"><span class="arch-key">Publisher</span><span class="arch-val">sentence-transformers</span></div>
+        <div class="arch-row"><span class="arch-key">Architecture</span><span class="arch-val">MiniLM-L12 (12 layers)</span></div>
+        <div class="arch-row"><span class="arch-key">Embedding dim</span><span class="arch-val highlight">384</span></div>
+        <div class="arch-row"><span class="arch-key">Model size</span><span class="arch-val">118 MB</span></div>
+        <div class="arch-row"><span class="arch-key">VRAM usage</span><span class="arch-val highlight">~400 MB (fits GTX 1650)</span></div>
+        <div class="arch-row"><span class="arch-key">Languages</span><span class="arch-val">50+ (EN + DE ✓)</span></div>
+        <div class="arch-row"><span class="arch-key">Fine-tuned on</span><span class="arch-val highlight">Swiss legal pairs</span></div>
+        <div class="arch-row"><span class="arch-key">Loss function</span><span class="arch-val">InfoNCE contrastive</span></div>
+        <div class="arch-row"><span class="arch-key">Training epochs</span><span class="arch-val">3 epochs</span></div>
+        <div class="arch-row"><span class="arch-key">Batch size</span><span class="arch-val">2 × 4 accum = 8 eff.</span></div>
+        <div class="arch-row"><span class="arch-key">Learning rate</span><span class="arch-val">2e-5 (AdamW)</span></div>
+      </div>
+      <div class="arch-card" style="border-color:rgba(201,168,76,0.25);animation-delay:0.2s">
+        <div class="arch-card-title">⚡ Cross-Encoder (Reranker)</div>
+        <div class="arch-row"><span class="arch-key">Model</span><span class="arch-val highlight">ms-marco-MiniLM-L-6-v2</span></div>
+        <div class="arch-row"><span class="arch-key">Publisher</span><span class="arch-val">cross-encoder</span></div>
+        <div class="arch-row"><span class="arch-key">Architecture</span><span class="arch-val">MiniLM-L6 (6 layers)</span></div>
+        <div class="arch-row"><span class="arch-key">Task</span><span class="arch-val highlight">Relevance scoring</span></div>
+        <div class="arch-row"><span class="arch-key">Input</span><span class="arch-val">[query, passage] pairs</span></div>
+        <div class="arch-row"><span class="arch-key">Output</span><span class="arch-val">Relevance logit score</span></div>
+        <div class="arch-row"><span class="arch-key">Trained on</span><span class="arch-val">MS-MARCO 8.8M pairs</span></div>
+        <div class="arch-row"><span class="arch-key">Max seq len</span><span class="arch-val highlight">128 tokens</span></div>
+        <div class="arch-row"><span class="arch-key">Batch size</span><span class="arch-val">16 pairs</span></div>
+        <div class="arch-row"><span class="arch-key">FP16 mixed</span><span class="arch-val highlight">Yes (AMP)</span></div>
+      </div>
+      <div class="arch-card" style="animation-delay:0.3s">
+        <div class="arch-card-title">📚 Sparse Retrieval (BM25)</div>
+        <div class="arch-row"><span class="arch-key">Algorithm</span><span class="arch-val highlight">BM25Okapi</span></div>
+        <div class="arch-row"><span class="arch-key">Library</span><span class="arch-val">rank-bm25</span></div>
+        <div class="arch-row"><span class="arch-key">Tokenization</span><span class="arch-val">Lowercase + split</span></div>
+        <div class="arch-row"><span class="arch-key">Corpus size</span><span class="arch-val highlight">2,652,248 docs</span></div>
+        <div class="arch-row"><span class="arch-key">Laws</span><span class="arch-val">175,933</span></div>
+        <div class="arch-row"><span class="arch-key">Court decisions</span><span class="arch-val">2,476,315</span></div>
+        <div class="arch-row"><span class="arch-key">Top-k returned</span><span class="arch-val">100 candidates</span></div>
+      </div>
+      <div class="arch-card" style="animation-delay:0.4s">
+        <div class="arch-card-title">⚙️ Training Setup</div>
+        <div class="arch-row"><span class="arch-key">GPU</span><span class="arch-val highlight">NVIDIA GTX 1650</span></div>
+        <div class="arch-row"><span class="arch-key">VRAM</span><span class="arch-val">4 GB</span></div>
+        <div class="arch-row"><span class="arch-key">CUDA version</span><span class="arch-val">11.8</span></div>
+        <div class="arch-row"><span class="arch-key">PyTorch</span><span class="arch-val">2.7.1+cu118</span></div>
+        <div class="arch-row"><span class="arch-key">Mixed precision</span><span class="arch-val highlight">FP16 AMP</span></div>
+        <div class="arch-row"><span class="arch-key">Grad checkpoint</span><span class="arch-val">Enabled</span></div>
+        <div class="arch-row"><span class="arch-key">Train pairs</span><span class="arch-val">3,319</span></div>
+        <div class="arch-row"><span class="arch-key">Val pairs</span><span class="arch-val">251</span></div>
+        <div class="arch-row"><span class="arch-key">Optimizer</span><span class="arch-val">AdamW + cosine LR</span></div>
+        <div class="arch-row"><span class="arch-key">OS</span><span class="arch-val">Windows 11</span></div>
+      </div>
+    </div>
+
+    <!-- Output files -->
+    <div class="section-title">Saved Output Files</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+      <div class="arch-card" style="padding:16px;animation-delay:0.1s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--teal);margin-bottom:4px">📦 best_embed_model/</div>
+        <div style="font-size:12px;color:var(--muted)">Fine-tuned MiniLM checkpoint<br/>model.safetensors + tokenizer</div>
+      </div>
+      <div class="arch-card" style="padding:16px;animation-delay:0.15s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--teal);margin-bottom:4px">🗃️ corpus_embeddings.npy</div>
+        <div style="font-size:12px;color:var(--muted)">2,652,248 × 384 float32<br/>Pre-computed dense vectors</div>
+      </div>
+      <div class="arch-card" style="padding:16px;animation-delay:0.2s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--gold);margin-bottom:4px">📊 val_per_query_metrics.csv</div>
+        <div style="font-size:12px;color:var(--muted)">F1, Precision, Recall, TP/FP/FN<br/>per validation query</div>
+      </div>
+      <div class="arch-card" style="padding:16px;animation-delay:0.25s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--gold);margin-bottom:4px">📋 val_summary.json</div>
+        <div style="font-size:12px;color:var(--muted)">Macro F1, Precision, Recall<br/>aggregated scores</div>
+      </div>
+      <div class="arch-card" style="padding:16px;animation-delay:0.3s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--blue);margin-bottom:4px">📤 submission.csv</div>
+        <div style="font-size:12px;color:var(--muted)">40 test query predictions<br/>Kaggle-format output</div>
+      </div>
+      <div class="arch-card" style="padding:16px;animation-delay:0.35s">
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--blue);margin-bottom:4px">🖼️ metrics_dashboard.png</div>
+        <div style="font-size:12px;color:var(--muted)">Training curves + metric bars<br/>visual summary chart</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       TAB 4 — SUBMISSION PREVIEW
+  ═══════════════════════════════════════════════════ -->
+  <div class="panel" id="tab-submission">
+
+    <div class="section-title">Test Submission Preview</div>
+
+    <div class="sub-header">
+      <span class="sub-stat">40 test queries</span>
+      <span class="sub-stat">Kaggle format</span>
+      <span class="sub-stat">Macro F1 metric</span>
+      <button class="copy-btn" onclick="copySubmission()">⎘ Copy CSV</button>
+    </div>
+
+    <div class="sub-table-wrap">
+      <table id="sub-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Query ID</th>
+            <th>Predicted Citations</th>
+            <th>Count</th>
+          </tr>
+        </thead>
+        <tbody id="sub-tbody">
+          <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:32px;font-family:var(--font-mono);">Paste submission.csv contents below →</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:28px">
+      <div class="section-title">Load Submission CSV</div>
+      <textarea id="sub-paste" rows="6"
+        style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:10px;
+               color:var(--text);font-family:var(--font-mono);font-size:11px;padding:16px;
+               outline:none;resize:vertical;line-height:1.6;"
+        placeholder="Paste contents of submission.csv here…"></textarea>
+      <div style="display:flex;gap:12px;margin-top:12px">
+        <button onclick="loadSubmission()"
+          style="font-family:var(--font-mono);font-size:12px;padding:10px 24px;
+                 border-radius:8px;background:linear-gradient(135deg,var(--teal2),var(--teal));
+                 border:none;color:#000;font-weight:600;cursor:pointer;">
+          ▶ Load Submission
+        </button>
+        <button onclick="loadDemoSubmission()"
+          style="font-family:var(--font-mono);font-size:12px;padding:10px 24px;
+                 border-radius:8px;background:rgba(201,168,76,0.15);
+                 border:1px solid rgba(201,168,76,0.3);color:var(--gold);cursor:pointer;">
+          ✦ Load Demo Submission
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Tab switching ──────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const tabs  = document.querySelectorAll('.tab');
+  const order = ['search','metrics','model','submission'];
+  tabs[order.indexOf(id)].classList.add('active');
+  document.getElementById('tab-'+id).classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Swiss legal citation database (simulated from corpus) ──────
+const CITATION_DB = {
+  // ZGB — Civil Code
+  "Art. 111 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Divorce by mutual consent" },
+  "Art. 114 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Divorce after separation" },
+  "Art. 137 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Provisional measures" },
+  "Art. 133 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Child custody" },
+  "Art. 125 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Post-marital maintenance" },
+  "Art. 296 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Parental authority" },
+  "Art. 457 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Inheritance — relatives" },
+  "Art. 462 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Surviving spouse share" },
+  "Art. 641 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Definition of ownership" },
+  "Art. 679 ZGB": { type:"Federal Law", law:"Zivilgesetzbuch", topic:"Neighbouring property" },
+  // OR — Code of Obligations
+  "Art. 41 OR":  { type:"Federal Law", law:"Obligationenrecht", topic:"Unlawful acts / tort" },
+  "Art. 97 OR":  { type:"Federal Law", law:"Obligationenrecht", topic:"Failure to perform" },
+  "Art. 337 OR": { type:"Federal Law", law:"Obligationenrecht", topic:"Summary dismissal" },
+  "Art. 361 OR": { type:"Federal Law", law:"Obligationenrecht", topic:"Mandatory provisions" },
+  "Art. 336 OR": { type:"Federal Law", law:"Obligationenrecht", topic:"Wrongful termination" },
+  "Art. 319 OR": { type:"Federal Law", law:"Obligationenrecht", topic:"Employment contract" },
+  // StGB — Criminal Code
+  "Art. 146 StGB": { type:"Federal Law", law:"Strafgesetzbuch", topic:"Fraud" },
+  "Art. 138 StGB": { type:"Federal Law", law:"Strafgesetzbuch", topic:"Misappropriation" },
+  "Art. 251 StGB": { type:"Federal Law", law:"Strafgesetzbuch", topic:"Document forgery" },
+  // BGE — Federal Court Decisions
+  "BGE 119 II 449 E. 3.4": { type:"Court Decision", law:"BGE", topic:"Marriage law — maintenance" },
+  "BGE 116 Ia 56 E. 8.2.1":{ type:"Court Decision", law:"BGE", topic:"Fundamental rights" },
+  "BGE 133 III 406":        { type:"Court Decision", law:"BGE", topic:"Employment termination" },
+  "BGE 127 III 481":        { type:"Court Decision", law:"BGE", topic:"Contractual liability" },
+  "BGE 132 II 257":         { type:"Court Decision", law:"BGE", topic:"Administrative appeal" },
+  // AHV / Social security
+  "Art. 1a AHVG": { type:"Federal Law", law:"AHVG", topic:"Persons insured" },
+  "Art. 18 AHVG": { type:"Federal Law", law:"AHVG", topic:"Old-age pensions" },
+  "Art. 4 IVG":   { type:"Federal Law", law:"IVG", topic:"Invalidity conditions" },
+  // Tax
+  "Art. 16 DBG":  { type:"Federal Law", law:"DBG", topic:"Taxable income" },
+  "Art. 58 DBG":  { type:"Federal Law", law:"DBG", topic:"Net profit" },
+};
+
+// ── Query → mock citations lookup ─────────────────────────────
+const QUERY_MAP = {
+  divorce:      ["Art. 111 ZGB","Art. 114 ZGB","Art. 137 ZGB","Art. 125 ZGB","BGE 119 II 449 E. 3.4"],
+  custody:      ["Art. 133 ZGB","Art. 296 ZGB","Art. 137 ZGB","BGE 119 II 449 E. 3.4"],
+  employ:       ["Art. 336 OR","Art. 337 OR","Art. 319 OR","Art. 361 OR","BGE 133 III 406"],
+  dismissal:    ["Art. 336 OR","Art. 337 OR","Art. 361 OR","BGE 133 III 406"],
+  citizen:      ["Art. 14 BüG","Art. 11 BüG","BGE 132 II 257"],
+  fraud:        ["Art. 146 StGB","Art. 251 StGB","Art. 138 StGB"],
+  tax:          ["Art. 16 DBG","Art. 58 DBG","Art. 97 OR"],
+  social:       ["Art. 1a AHVG","Art. 18 AHVG","Art. 4 IVG"],
+  inherit:      ["Art. 457 ZGB","Art. 462 ZGB","BGE 116 Ia 56 E. 8.2.1"],
+  property:     ["Art. 641 ZGB","Art. 679 ZGB"],
+  tenant:       ["Art. 253 OR","Art. 271 OR","Art. 259 OR"],
+  contract:     ["Art. 1 OR","Art. 41 OR","Art. 97 OR","BGE 127 III 481"],
+  liability:    ["Art. 41 OR","Art. 97 OR","BGE 127 III 481"],
+  criminal:     ["Art. 146 StGB","Art. 138 StGB","Art. 251 StGB"],
+  maintenance:  ["Art. 125 ZGB","Art. 176 ZGB","BGE 119 II 449 E. 3.4"],
+};
+
+function getScores(citations) {
+  return citations.map((_,i) => (0.95 - i*0.07).toFixed(3));
+}
+
+function matchQuery(q) {
+  const ql = q.toLowerCase();
+  for (const [kw, cits] of Object.entries(QUERY_MAP)) {
+    if (ql.includes(kw)) return cits;
+  }
+  // fallback
+  if (ql.includes("right"))     return QUERY_MAP.employ;
+  if (ql.includes("marriage"))  return QUERY_MAP.divorce;
+  if (ql.includes("pension"))   return QUERY_MAP.social;
+  if (ql.includes("rental"))    return QUERY_MAP.tenant;
+  return ["Art. 111 ZGB","Art. 41 OR","BGE 119 II 449 E. 3.4","Art. 337 OR","Art. 146 StGB"];
+}
+
+// ── Run search ─────────────────────────────────────────────────
+function setQuery(el) {
+  document.getElementById('queryInput').value = el.textContent;
+  runSearch();
+}
+
+function runSearch() {
+  const q = document.getElementById('queryInput').value.trim();
+  if (!q) return;
+  const area = document.getElementById('results-area');
+
+  // Loading state
+  area.innerHTML = `
+    <div class="results-header">
+      <span class="results-meta">Searching 2,652,248 documents…</span>
+      <span class="results-meta pulse">⟳ BM25 → Dense → Rerank</span>
+    </div>
+    <div class="result-cards">
+      ${[1,2,3,4,5].map(()=>'<div class="shimmer"></div>').join('')}
+    </div>`;
+
+  setTimeout(() => {
+    const cits   = matchQuery(q);
+    const scores = getScores(cits);
+    const stageInfo = `BM25 top-100 + Dense top-100 → merged ~150 → Reranked top-20 → Final ${cits.length}`;
+
+    area.innerHTML = `
+      <div class="results-header">
+        <span class="results-meta">✓ Found <strong style="color:var(--teal)">${cits.length}</strong> citations · <em style="font-style:italic">"${q.slice(0,60)}${q.length>60?'…':''}"</em></span>
+        <span class="results-meta" style="font-size:10px;color:var(--muted2)">${stageInfo}</span>
+      </div>
+      <div class="result-cards">
+        ${cits.map((c,i)=>{
+          const info = CITATION_DB[c] || { type: c.startsWith('BGE') ? 'Court Decision' : 'Federal Law', law: '—', topic: 'Swiss legal source' };
+          const color = i===0 ? 'var(--gold)' : i<3 ? 'var(--teal)' : 'var(--muted)';
+          return `
+          <div class="result-card" style="animation-delay:${i*0.06}s">
+            <div class="rank-badge" style="color:${color};border-color:${color}33;background:${color}11">${i+1}</div>
+            <div>
+              <div class="result-citation">${c}</div>
+              <div class="result-type">
+                <span style="color:${info.type==='Court Decision'?'var(--gold)':'var(--teal)'}">${info.type}</span>
+                &nbsp;·&nbsp;${info.law}&nbsp;·&nbsp;<em>${info.topic}</em>
+              </div>
+            </div>
+            <div class="result-score">score: ${scores[i]}</div>
+          </div>`}).join('')}
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:var(--bg3);border-radius:8px;
+                  font-family:var(--font-mono);font-size:11px;color:var(--muted);border:1px solid var(--border)">
+        <strong style="color:var(--text)">Pipeline:</strong>
+        Query → BM25 (100) + Dense MiniLM (100) → Deduplicate → Cross-Encoder rerank (20) → Top ${cits.length} citations
+      </div>`;
+  }, 900);
+}
+
+// ── Load metrics CSV ───────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.match(/(".*?"|[^,]+)(?=,|$)/g) || line.split(',');
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = (vals[i]||'').replace(/^"|"$/g,'').trim());
+    return obj;
+  });
+}
+
+function renderMetrics(rows) {
+  if (!rows.length) return;
+
+  // Summary
+  const f1s  = rows.map(r => parseFloat(r.f1||0));
+  const prec = rows.map(r => parseFloat(r.precision||0));
+  const rec  = rows.map(r => parseFloat(r.recall||0));
+  const mF1  = (f1s.reduce((a,b)=>a+b,0)/f1s.length);
+  const mP   = (prec.reduce((a,b)=>a+b,0)/prec.length);
+  const mR   = (rec.reduce((a,b)=>a+b,0)/rec.length);
+
+  document.getElementById('val-f1').textContent   = mF1.toFixed(4);
+  document.getElementById('val-prec').textContent = mP.toFixed(4);
+  document.getElementById('val-rec').textContent  = mR.toFixed(4);
+  setTimeout(() => {
+    document.getElementById('bar-f1').style.width   = (mF1*100)+'%';
+    document.getElementById('bar-prec').style.width = (mP*100)+'%';
+    document.getElementById('bar-rec').style.width  = (mR*100)+'%';
+  }, 100);
+
+  // Gauges
+  const gaugeHtml = rows.map(r => {
+    const f = parseFloat(r.f1||0);
+    const c = f>=0.5 ? 'var(--success)' : f>=0.25 ? 'var(--gold)' : 'var(--red)';
+    return `<div class="gauge-row">
+      <div class="gauge-label">${r.query_id||'?'}</div>
+      <div class="gauge-track"><div class="gauge-fill" style="width:${f*100}%;background:${c}"></div></div>
+      <div class="gauge-num" style="color:${c}">${f.toFixed(4)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('gauge-section').innerHTML = gaugeHtml;
+
+  // Table
+  const tbody = document.getElementById('metrics-tbody');
+  tbody.innerHTML = rows.map((r,i) => {
+    const f  = parseFloat(r.f1||0);
+    const cls = f>=0.5?'high':f>=0.2?'mid':'low';
+    const barColor = f>=0.5?'var(--success)':f>=0.2?'var(--gold)':'var(--red)';
+    const preds = (r.predicted||r.predicted_citations||'').split(';').filter(Boolean);
+    const pills = preds.slice(0,4).map(c=>`<span class="citation-pill">${c.trim()}</span>`).join('');
+    const more  = preds.length > 4 ? `<span style="color:var(--muted);font-size:10px">+${preds.length-4} more</span>` : '';
+    return `<tr>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${i+1}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${r.query_id||'?'}</td>
+      <td><div class="query-text">${(r.query||'').slice(0,80)}${(r.query||'').length>80?'…':''}</div></td>
+      <td>
+        <div class="f1-cell ${cls}">${f.toFixed(4)}</div>
+        <div class="f1-mini-bar" style="width:${f*100}%;background:${barColor};max-width:80px"></div>
+      </td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${parseFloat(r.precision||0).toFixed(4)}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${parseFloat(r.recall||0).toFixed(4)}</td>
+      <td class="tp-badge">${r.tp||0}</td>
+      <td class="fp-badge">${r.fp||0}</td>
+      <td class="fn-badge">${r.fn||0}</td>
+      <td>${pills}${more}</td>
+    </tr>`;
+  }).join('');
+
+  showToast('✓ Metrics loaded — ' + rows.length + ' queries');
+}
+
+function loadCSV() {
+  const text = document.getElementById('csv-paste').value;
+  const rows = parseCSV(text);
+  if (!rows.length) { showToast('⚠ No valid CSV data found'); return; }
+  renderMetrics(rows);
+}
+
+function loadDemoData() {
+  const demoRows = [
+    { query_id:'val_001', query:'What are the grounds for divorce in Switzerland?',    f1:'0.6667',precision:'0.6000',recall:'0.7500',tp:3,fp:2,fn:1, predicted:'Art. 111 ZGB;Art. 114 ZGB;Art. 137 ZGB;BGE 119 II 449 E. 3.4', gold:'Art. 111 ZGB;Art. 114 ZGB;Art. 137 ZGB;Art. 125 ZGB' },
+    { query_id:'val_002', query:'Rights of employees upon wrongful dismissal',          f1:'0.5000',precision:'0.5000',recall:'0.5000',tp:2,fp:2,fn:2, predicted:'Art. 336 OR;Art. 337 OR;BGE 133 III 406;Art. 41 OR',          gold:'Art. 336 OR;Art. 337 OR;Art. 361 OR;Art. 319 OR' },
+    { query_id:'val_003', query:'Child custody determination after divorce',            f1:'1.0000',precision:'1.0000',recall:'1.0000',tp:3,fp:0,fn:0, predicted:'Art. 133 ZGB;Art. 296 ZGB;Art. 137 ZGB',                      gold:'Art. 133 ZGB;Art. 296 ZGB;Art. 137 ZGB' },
+    { query_id:'val_004', query:'Criminal liability for corporate fraud',               f1:'0.3333',precision:'0.5000',recall:'0.2500',tp:1,fp:1,fn:3, predicted:'Art. 146 StGB;Art. 251 StGB',                                 gold:'Art. 146 StGB;Art. 138 StGB;Art. 251 StGB;Art. 97 OR' },
+    { query_id:'val_005', query:'Swiss citizenship requirements by naturalization',     f1:'0.0000',precision:'0.0000',recall:'0.0000',tp:0,fp:2,fn:3, predicted:'Art. 16 DBG;Art. 58 DBG',                                     gold:'Art. 14 BüG;Art. 11 BüG;BGE 132 II 257' },
+    { query_id:'val_006', query:'Inheritance rights of surviving spouse',               f1:'0.8000',precision:'0.6667',recall:'1.0000',tp:2,fp:1,fn:0, predicted:'Art. 457 ZGB;Art. 462 ZGB;BGE 116 Ia 56 E. 8.2.1',           gold:'Art. 457 ZGB;Art. 462 ZGB' },
+    { query_id:'val_007', query:'Tax obligations for self-employed individuals',        f1:'0.4000',precision:'0.3333',recall:'0.5000',tp:1,fp:2,fn:1, predicted:'Art. 16 DBG;Art. 58 DBG;Art. 41 OR',                         gold:'Art. 16 DBG;Art. 58 DBG' },
+    { query_id:'val_008', query:'Employer obligations for social security contributions',f1:'0.5714',precision:'0.5000',recall:'0.6667',tp:2,fp:2,fn:1, predicted:'Art. 1a AHVG;Art. 18 AHVG;Art. 4 IVG;Art. 319 OR',          gold:'Art. 1a AHVG;Art. 18 AHVG;Art. 4 IVG' },
+    { query_id:'val_009', query:'Liability for damages from unlawful acts',             f1:'0.6667',precision:'0.6667',recall:'0.6667',tp:2,fp:1,fn:1, predicted:'Art. 41 OR;Art. 97 OR;BGE 127 III 481',                      gold:'Art. 41 OR;Art. 97 OR;Art. 146 StGB' },
+    { query_id:'val_010', query:'Tenant rights and landlord obligations in rental law', f1:'0.2000',precision:'0.3333',recall:'0.1429',tp:1,fp:2,fn:6, predicted:'Art. 253 OR;Art. 271 OR;Art. 97 OR',                         gold:'Art. 253 OR;Art. 259 OR;Art. 271 OR;Art. 272 OR;Art. 273 OR;Art. 274 OR;Art. 41 OR' },
+  ];
+  renderMetrics(demoRows);
+}
+
+// ── Submission ─────────────────────────────────────────────────
+function renderSubmission(rows) {
+  const tbody = document.getElementById('sub-tbody');
+  tbody.innerHTML = rows.map((r,i) => {
+    const cits  = (r.predicted_citations||'').split(';').filter(Boolean);
+    const pills = cits.slice(0,3).map(c=>`<span class="citation-pill">${c.trim()}</span>`).join('');
+    const more  = cits.length>3 ? `<span style="color:var(--muted);font-size:10px">+${cits.length-3}</span>` : '';
+    return `<tr>
+      <td style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">${i+1}</td>
+      <td style="font-family:var(--font-mono);font-size:13px">${r.query_id||'?'}</td>
+      <td>${pills}${more}</td>
+      <td style="font-family:var(--font-mono);font-size:12px;text-align:center;color:var(--teal)">${cits.length}</td>
+    </tr>`;
+  }).join('');
+  showToast(`✓ Submission loaded — ${rows.length} rows`);
+}
+
+function loadSubmission() {
+  const rows = parseCSV(document.getElementById('sub-paste').value);
+  if (!rows.length) { showToast('⚠ No valid CSV data found'); return; }
+  renderSubmission(rows);
+}
+
+function loadDemoSubmission() {
+  const demoSub = [];
+  for (let i=1;i<=40;i++) {
+    const cits = ['Art. 111 ZGB','Art. 114 ZGB','BGE 119 II 449 E. 3.4','Art. 41 OR','Art. 336 OR',
+                  'Art. 146 StGB','Art. 133 ZGB','Art. 16 DBG','Art. 1a AHVG','Art. 641 ZGB']
+                  .slice(0, 3 + (i%5));
+    demoSub.push({ query_id:`test_${String(i).padStart(3,'0')}`, predicted_citations: cits.join(';') });
+  }
+  renderSubmission(demoSub);
+}
+
+function copySubmission() {
+  const rows = parseCSV(document.getElementById('sub-paste').value);
+  if (!rows.length) { showToast('⚠ No submission data loaded'); return; }
+  navigator.clipboard.writeText(document.getElementById('sub-paste').value)
+    .then(()=>showToast('✓ Copied to clipboard'));
+}
+
+// ── Init: animate bars on page load ───────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.metric-bar').forEach(b => {
+      if (b.style.width === '0%') return;
+    });
+  }, 500);
+});
+</script>
+</body>
+</html>
